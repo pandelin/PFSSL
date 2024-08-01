@@ -189,7 +189,6 @@ def local_train_net(args, round, net, local_train_model, cluster_model, net_id, 
             pred_feature = torch.softmax(pred_data, dim=1)
             pred_max = torch.argmax(pred_feature, dim=1)
             pred_train = one_hot(pred_max, num_classes=2).permute(0, 3, 1, 2).contiguous()
-            # loss_sup = dice_loss(pred_feature, label_hot)  # 本地预测和目标的loss
 
             # cal metric
             train_miou = train_metric_iou(pred_train, label_hot)
