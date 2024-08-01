@@ -113,8 +113,6 @@ def main():
         fed_avg_freqs = {k: (len(label)+len(un_label)) / total_data_points for k, (label, un_label, test)  in
                          enumerate(local_dls)}  # average data
 
-        # manipulate_gradient(args, None, nets_this_round, benign_client_list, nets_param_start)
-
         # cal graph matrix
         # Graph Matrix is not normalized yet  tensor(2,2)
         graph_matrix = update_graph_matrix_neighbor(graph_matrix, nets_this_round, global_parameters, dw, fed_avg_freqs,

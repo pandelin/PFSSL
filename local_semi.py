@@ -24,7 +24,6 @@ import torchmetrics
 from tqdm import tqdm
 import torchvision.transforms.functional as TF
 import numpy as np
-from models.unet2d import UNet2D
 from torch.nn.functional import one_hot
 from utils.metirc import MultDice
 import time
@@ -65,12 +64,10 @@ def local_train(args, round, nets_this_round, local_train_models, cluster_models
         best_test_dice_list.append(best_test_dice)
         best_test_iou_list.append(best_test_iou)
         net.to('cpu')
-        # nets_this_round[net_id] = teacher
 
     return best_test_dice_list, best_test_iou_list
 
 def local_train_net(args, round, net, local_train_model, cluster_model, net_id, label_local_dl, un_label_local_dl, test_local_dl):
-    # args = get_args()
     seed_torch(args.seed)
     # Project Saving Path
     project_path = os.path.join(args.project, str(net_id))
@@ -88,7 +85,6 @@ def local_train_net(args, round, net, local_train_model, cluster_model, net_id, 
     metrics.train_loss2 = []
     metrics.val_loss = []
     logger = logging(os.path.join(project_path, 'train_val.log'))
-    # logger.info('PyTorch Version {}\n Experiment{}'.format(torch.__version__, project_path))
     # init log
     runs_log_name = os.path.join(project_path, 'log')
     my_writer = SummaryWriter(os.path.join(runs_log_name, f'res_log'))
@@ -102,21 +98,14 @@ def local_train_net(args, round, net, local_train_model, cluster_model, net_id, 
 
     # Load Model & EMA
     student1 = local_train_model.to(device)
-    # student1 = copy.deepcopy(net).to(device)
     student2 = net.to(device)
     teacher = model_ema(copy.deepcopy(net)).to(device)
-    # teacher.detach_model()
-    # best_model_wts = copy.deepcopy(teacher.state_dict())
     best_epoch = 0
     best_loss = 100
     alpha = 0.1
     global all_best_test_iou
     global all_best_test_dice
 
-    # Criterion & Optimizer & LR Schedule
-    # optimizer = optim.AdamW(student.parameters(), lr=args.learning_rate, betas=(0.9, 0.999))
-    # criterion = DSCLoss(num_classes=args.num_classes, intra_weights=args.intra_weights, inter_weight=args.inter_weight,
-    #                     device=device)
     dice_loss = DiceLoss_Model()
     criterion = DSCLoss(num_classes=args.num_classes, intra_weights=args.intra_weights, inter_weight=args.inter_weight,
                         device=device)
@@ -128,8 +117,6 @@ def local_train_net(args, round, net, local_train_model, cluster_model, net_id, 
     optimizer2 = optim.AdamW(student2.parameters(), lr=args.learning_rate, betas=(0.9, 0.999))
 
     # metric
-    # train_metric_iou = torchmetrics.JaccardIndex(task="multiclass", num_classes=2).to(device)
-    # test_metric_iou = torchmetrics.JaccardIndex(task="multiclass", num_classes=2).to(device)
     train_metric_iou = torchmetrics.JaccardIndex(task="multilabel", num_labels=2).to(device)
     train_metric_dice = MultDice().to(device)
     test_metric_iou = torchmetrics.JaccardIndex(task="multilabel", num_labels=2).to(device)
@@ -177,9 +164,6 @@ def local_train_net(args, round, net, local_train_model, cluster_model, net_id, 
             pred1_data = student1(image)  # [1,3,128,128]
             pred2_data = student2(imageA1)
             pred_data = teacher(image)
-            # pred_feature = torch.softmax(preds, dim=1) # [1,2,128,128]
-            # loss_sup = criterion(pred, label.squeeze(1).long())
-
             loss1_sup = criterion(pred1_data, label.squeeze(1).long())
             loss2_sup = criterion(pred2_data, label.squeeze(1).long())
             loss_sup = 0.5 * (loss1_sup + loss2_sup)
